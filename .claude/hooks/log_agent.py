@@ -12,8 +12,18 @@ AUDIT_LOG = os.path.join(_CLAUDE_DIR, 'memory', 'agent-audit.log')
 
 
 def main():
+    raw = sys.stdin.read()
+    # Debug: always write raw payload to tmp log regardless of tool_name
     try:
-        payload = json.loads(sys.stdin.read())
+        debug_log = os.path.join(_CLAUDE_DIR, 'memory', 'agent-debug.log')
+        os.makedirs(os.path.dirname(debug_log), exist_ok=True)
+        with open(debug_log, 'a', encoding='utf-8') as f:
+            f.write(f'[{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] CWD={os.getcwd()} payload={raw[:200]}\n')
+    except Exception:
+        pass
+
+    try:
+        payload = json.loads(raw)
     except (json.JSONDecodeError, ValueError):
         sys.exit(0)
 
