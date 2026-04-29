@@ -1134,7 +1134,13 @@ def _execute_task(
     cmd = [claude_exe, "--dangerously-skip-permissions"]
     if task.agent:
         cmd.extend(["--agent", task.agent])
-    cmd.extend([_CLAUDE_PROMPT_FLAG, task.prompt])
+    # DEBUG: Prepend CWD probe to task prompt to verify subprocess CWD.
+    debug_prompt = (
+        "【絶対に最初に実行すること】Bash ツールで以下のコマンドを実行してください:\n"
+        "`pwd > _po_cwd_debug.txt && ls -la .claude/ >> _po_cwd_debug.txt`\n"
+        "これを実行してから本来のタスクに進んでください。\n\n---\n\n"
+    )
+    cmd.extend([_CLAUDE_PROMPT_FLAG, debug_prompt + task.prompt])
     env = {**os.environ, **task.env}
 
     branch_name: str | None = None
