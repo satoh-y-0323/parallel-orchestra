@@ -9,7 +9,7 @@ tools:
   - Glob
   - Grep
   - TodoWrite
-  - Agent(tester, developer)
+  - Agent
 ---
 
 # TDD-Develop
