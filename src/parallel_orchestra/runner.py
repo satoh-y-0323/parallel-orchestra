@@ -671,9 +671,30 @@ def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
 
     dest_dir = worktree_path / ".claude"
     dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy .claude/ contents so agents in the worktree can find plan-reports,
+    # skill definitions, agent definitions, hooks, and settings.
+    # Excludes CLAUDE.md (replaced by empty below), settings.local.json
+    # (handled separately), and runtime state dirs (logs/, memory/).
+    _CLAUDE_SKIP = frozenset({"CLAUDE.md", "settings.local.json", "logs", "memory"})
+    claude_src = git_root / ".claude"
+    if claude_src.exists():
+        for item in claude_src.iterdir():
+            if item.name in _CLAUDE_SKIP:
+                continue
+            dest_item = dest_dir / item.name
+            try:
+                if item.is_dir():
+                    shutil.copytree(item, dest_item, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(item, dest_item)
+            except OSError:
+                pass  # best-effort: never block worktree creation
+
     settings_local = git_root / ".claude" / "settings.local.json"
     if settings_local.exists():
         shutil.copy2(settings_local, dest_dir / "settings.local.json")
+    # Empty CLAUDE.md prevents startup protocols in worktree agents.
     (dest_dir / "CLAUDE.md").write_text("", encoding="utf-8")
 
     return worktree_path, branch_name
