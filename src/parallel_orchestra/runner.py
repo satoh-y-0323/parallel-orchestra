@@ -867,6 +867,33 @@ def _merge_write_branches(
     return tuple(merge_results)
 
 
+def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
+    """Commit any changes left uncommitted by the agent (best-effort).
+
+    Runs git add -A then git commit. If there is nothing to commit,
+    git commit exits non-zero and is silently ignored.
+    """
+    try:
+        subprocess.run(
+            ["git", "add", "-A"],
+            cwd=str(worktree_path),
+            capture_output=True,
+            text=True,
+            timeout=_GIT_COMMAND_TIMEOUT_SEC,
+            check=False,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", f"parallel-orchestra: task {task_id} [auto-commit]"],
+            cwd=str(worktree_path),
+            capture_output=True,
+            text=True,
+            timeout=_GIT_COMMAND_TIMEOUT_SEC,
+            check=False,
+        )
+    except Exception:  # noqa: BLE001
+        pass  # best-effort: never block task result
+
+
 def _worktree_cleanup(git_root: Path, worktree_path: Path) -> None:
     """Remove a git worktree on a best-effort basis."""
     try:
@@ -1101,6 +1128,11 @@ def _execute_task(
                 duration_sec=duration_sec,
                 branch_name=branch_name,
             )
+
+        # Auto-commit any changes the agent left uncommitted before worktree cleanup.
+        if worktree_path is not None and returncode == 0 and not timed_out:
+            _auto_commit_worktree(worktree_path, task.id)
+
     finally:
         if worktree_path is not None and git_root is not None:
             _worktree_cleanup(git_root, worktree_path)
