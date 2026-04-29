@@ -12,6 +12,12 @@
 
 ---
 
+## Step 0: ワークフロー読み込み確認
+
+**最初に**、Write ツールで `.claude/reports/_worktree_tdd_workflow_check.md` を作成し、内容に "worktree-tdd-workflow check 1" と書くこと。
+
+---
+
 ## Step 1: tester（現状確認フェーズ）
 
 以下を順番に実行する:
