@@ -693,7 +693,16 @@ def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
                 continue
             dest_item = dest_dir / item.name
             try:
-                if item.is_dir():
+                if item.is_dir() and item.name == "reports":
+                    # Copy only plan-reports; test-reports are outputs produced
+                    # inside the worktree and must not be pre-seeded here
+                    # (they would be committed by auto-commit and cause merge
+                    # conflicts when the same file exists untracked in the
+                    # main repo).
+                    dest_item.mkdir(exist_ok=True)
+                    for report in item.glob("plan-report-*.md"):
+                        shutil.copy2(report, dest_item / report.name)
+                elif item.is_dir():
                     shutil.copytree(item, dest_item, dirs_exist_ok=True)
                 else:
                     shutil.copy2(item, dest_item)
@@ -1207,7 +1216,10 @@ def _execute_task(
 
     finally:
         if worktree_path is not None and git_root is not None:
-            _worktree_cleanup(git_root, worktree_path)
+            if os.environ.get("PO_KEEP_WORKTREE") != "1":
+                _worktree_cleanup(git_root, worktree_path)
+            else:
+                print(f"[DEBUG] worktree kept at: {worktree_path}", file=sys.stderr)
 
     duration_sec = time.perf_counter() - start
     if dashboard is not None and dashboard.enabled:
