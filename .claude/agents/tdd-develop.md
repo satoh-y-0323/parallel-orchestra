@@ -4,6 +4,9 @@ description: ヘッドレス専用 TDD コンダクター。worktree-tdd-workflo
 tools:
   - Read
   - Glob
+  - Bash
+  - Write
+  - Edit
   - Agent(tester, developer)
 ---
 
