@@ -39,7 +39,7 @@ tools:
 
 ### Step 0: 初期化
 
-1. `skills/worktree-tdd-workflow.md` を Read してサイクル手順を把握する
+1. `.claude/skills/worktree-tdd-workflow.md` を Read してサイクル手順を把握する
 2. Glob で `.claude/reports/plan-report-*.md` の最新ファイルの存在を確認する
    - 存在しない場合: 「plan-report が見つかりません。Parallel Orchestra のマニフェストに plan-report のパスを含めるか、事前に計画フェーズを完了してください」と出力して終了する
 3. ループカウンターを `0` に初期化する
