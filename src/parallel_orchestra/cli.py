@@ -275,3 +275,7 @@ def main(argv: list[str] | None = None) -> int:
     _print_summary(run_result, quiet=args.quiet)
 
     return _EXIT_SUCCESS if run_result.overall_ok else _EXIT_PARTIAL_FAILURE
+
+
+if __name__ == "__main__":
+    sys.exit(main())
