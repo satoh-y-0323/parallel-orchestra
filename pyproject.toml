@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=78.1.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parallel-orchestra"
+version = "0.1.0"
+description = "Run Claude Code agents in parallel from a YAML-frontmatter Markdown manifest, with git worktree isolation for write tasks."
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/satoh-y-0323/parallel-orchestra"
+Repository = "https://github.com/satoh-y-0323/parallel-orchestra"
+"Bug Tracker" = "https://github.com/satoh-y-0323/parallel-orchestra/issues"
+
+[project.scripts]
+parallel-orchestra = "parallel_orchestra.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+    "ruff",
+    "black",
+    "mypy",
+    "types-PyYAML",
+    "pre-commit",
+    "pip-audit",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501", "F401", "F541", "UP037"]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "conftest"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_any_generics = false
+ignore_errors = true
