@@ -676,7 +676,11 @@ def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
     # skill definitions, agent definitions, hooks, and settings.
     # Excludes CLAUDE.md (replaced by empty below), settings.local.json
     # (handled separately), and runtime state dirs (logs/, memory/).
-    _CLAUDE_SKIP = frozenset({"CLAUDE.md", "settings.local.json", "logs", "memory"})
+    # settings.json is intentionally excluded: Claude Code resolves it from the
+    # main repo (via the git worktree pointer), so copying it would cause
+    # permission patterns to be evaluated against the wrong base path.
+    # settings.local.json is handled separately below.
+    _CLAUDE_SKIP = frozenset({"CLAUDE.md", "settings.json", "settings.local.json", "logs", "memory"})
     claude_src = git_root / ".claude"
     if claude_src.exists():
         for item in claude_src.iterdir():
