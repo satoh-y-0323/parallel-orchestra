@@ -1,6 +1,3 @@
-# Claude Code / C3 framework (local only, not committed)
-.claude/
-
 # Python
 __pycache__/
 *.pyc

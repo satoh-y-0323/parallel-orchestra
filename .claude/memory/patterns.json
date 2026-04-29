@@ -1,0 +1,43 @@
+{
+  "patterns": [
+    {
+      "id": "session_update_in_commands",
+      "description": "セッションファイル更新は CLAUDE.md の一般ルールではなく各コマンドファイルの承認/否認ポイントに直接記述しないと LLM が実行しない",
+      "registered_date": "20260428",
+      "trust_score": 1.0,
+      "promotion_candidate": false,
+      "observations": [
+        {
+          "date": "20260428"
+        }
+      ],
+      "last_updated": "20260428"
+    },
+    {
+      "id": "review_accepted_exception",
+      "description": "レビューで指摘を許容した場合は理由を [許容例外] として patterns に記録することで、次回レビューでの再指摘を防ぐルールに昇格できる",
+      "registered_date": "20260428",
+      "trust_score": 1.0,
+      "promotion_candidate": false,
+      "observations": [
+        {
+          "date": "20260428"
+        }
+      ],
+      "last_updated": "20260428"
+    },
+    {
+      "id": "pre_tool_block_cd",
+      "description": "Bash ツールで cd を実行すると CWD が変わりフックが失敗するため、pre_tool.py で cd コマンドをブロックして相対パス実行を促す",
+      "registered_date": "20260428",
+      "trust_score": 1.0,
+      "promotion_candidate": false,
+      "observations": [
+        {
+          "date": "20260428"
+        }
+      ],
+      "last_updated": "20260428"
+    }
+  ]
+}

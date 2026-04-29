@@ -1,0 +1,6 @@
+全8テストがパスしました。作成したファイルは以下の2つです：
+
+- `example/tests/test_multiplication.py` — 7パターンの整数テスト＋浮動小数点テスト
+- `example/src/multiplication.py` — `multiply(a, b)` の実装
+
+TDDサイクル（Red → Green）が完了しています。
