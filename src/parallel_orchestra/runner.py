@@ -896,11 +896,14 @@ def _copy_test_reports_from_worktree(
     """Copy all test-report-*.md files from worktree .claude/reports/ to project."""
     try:
         src_dir = worktree_path / ".claude" / "reports"
+        print(f"[DEBUG] test-report copy: src_dir={src_dir} exists={src_dir.exists()}", file=sys.stderr)
         if not src_dir.exists():
             return
+        reports = list(src_dir.glob("test-report-*.md"))
+        print(f"[DEBUG] test-report copy: found {len(reports)} reports: {[r.name for r in reports]}", file=sys.stderr)
         dst_dir = project_root / ".claude" / "reports"
         dst_dir.mkdir(parents=True, exist_ok=True)
-        for report in src_dir.glob("test-report-*.md"):
+        for report in reports:
             shutil.copy2(report, dst_dir / report.name)
     except OSError:
         pass  # best-effort
