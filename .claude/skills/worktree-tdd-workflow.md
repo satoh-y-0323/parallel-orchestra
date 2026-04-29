@@ -16,10 +16,8 @@
 
 以下を順番に実行する:
 
-1. `.claude/agents/tester.md` を Read してペルソナ・制約・手順を把握する
-2. Glob で `.claude/reports/plan-report-*.md` の最新ファイルパスを取得し、Read する
-3. Agent ツールを起動する。**subagent_type は指定しない**。プロンプトに以下を注入する:
-   - tester.md の内容（ペルソナ・制約・手順）
+1. Glob で `.claude/reports/plan-report-*.md` の最新ファイルパスを取得し、Read する
+2. Agent ツールを `subagent_type: "tester"` で起動する。プロンプトに以下を注入する:
    - plan-report の内容（テスト対象・受け入れ条件）
    - 「テストが存在しない場合は Red フェーズとして失敗するテストを先に作成してから実行すること」
    - 以下の手順を必ず守ること:
@@ -44,9 +42,7 @@
 
 以下を順番に実行する:
 
-1. `.claude/agents/developer.md` を Read してペルソナ・制約・手順を把握する
-2. Agent ツールを起動する。**subagent_type は指定しない**。プロンプトに以下を注入する:
-   - developer.md の内容（ペルソナ・制約・手順）
+1. Agent ツールを `subagent_type: "developer"` で起動する。プロンプトに以下を注入する:
    - plan-report の内容
    - test-report の内容（不合格テストの詳細）
    - 「test-report の不合格テストをすべて通過させるよう実装すること。テストコードは編集しないこと」
@@ -57,9 +53,7 @@
 
 以下を順番に実行する:
 
-1. `.claude/agents/tester.md` を Read してペルソナ・制約・手順を把握する（Step 1 のコンテキストが残っていれば省略可）
-2. Agent ツールを起動する。**subagent_type は指定しない**。プロンプトに以下を注入する:
-   - tester.md の内容（ペルソナ・制約・手順）
+1. Agent ツールを `subagent_type: "tester"` で起動する。プロンプトに以下を注入する:
    - plan-report の内容
    - 「developer の実装後のテストを全件実行すること」
    - 以下の手順を必ず守ること:
