@@ -1131,7 +1131,7 @@ def _execute_task(
     PO_WORKTREE_GUARD=1 is set in the environment automatically.
     For read_only=True tasks, effective_cwd (passed by the caller) is used.
     """
-    cmd = [claude_exe]
+    cmd = [claude_exe, "--dangerously-skip-permissions"]
     if task.agent:
         cmd.extend(["--agent", task.agent])
     cmd.extend([_CLAUDE_PROMPT_FLAG, task.prompt])
