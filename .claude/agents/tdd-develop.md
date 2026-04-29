@@ -3,10 +3,12 @@ model: sonnet
 description: ヘッドレス専用 TDD コンダクター。worktree-tdd-workflow を上限付きループで実行し、全テスト合格まで tester→developer→tester を繰り返す。AskUserQuestion を使わない。
 tools:
   - Read
-  - Glob
-  - Bash
   - Write
   - Edit
+  - Bash
+  - Glob
+  - Grep
+  - TodoWrite
   - Agent(tester, developer)
 ---
 

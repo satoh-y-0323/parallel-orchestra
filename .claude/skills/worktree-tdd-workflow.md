@@ -1,7 +1,7 @@
 # Worktree TDD Workflow
 
 ヘッドレス専用の TDD 1サイクル定義。AskUserQuestion を含まない。
-`agents/tdd-develop.md` から呼び出されることを前提とする。
+`.claude/agents/tdd-develop.md` から呼び出されることを前提とする。
 
 ---
 
@@ -17,7 +17,7 @@
 以下を順番に実行する:
 
 1. Glob で `.claude/reports/plan-report-*.md` の最新ファイルパスを取得し、Read する
-2. Agent ツールを `subagent_type: "tester"` で起動する。プロンプトに以下を注入する:
+2. tester エージェントを使ってください。プロンプトに以下を注入する:
    - plan-report の内容（テスト対象・受け入れ条件）
    - 「テストが存在しない場合は Red フェーズとして失敗するテストを先に作成してから実行すること」
    - 以下の手順を必ず守ること:
@@ -42,7 +42,7 @@
 
 以下を順番に実行する:
 
-1. Agent ツールを `subagent_type: "developer"` で起動する。プロンプトに以下を注入する:
+1. developer エージェントを使ってください。プロンプトに以下を注入する:
    - plan-report の内容
    - test-report の内容（不合格テストの詳細）
    - 「test-report の不合格テストをすべて通過させるよう実装すること。テストコードは編集しないこと」
@@ -53,7 +53,7 @@
 
 以下を順番に実行する:
 
-1. Agent ツールを `subagent_type: "tester"` で起動する。プロンプトに以下を注入する:
+1. tester エージェントを使ってください。プロンプトに以下を注入する:
    - plan-report の内容
    - 「developer の実装後のテストを全件実行すること」
    - 以下の手順を必ず守ること:
