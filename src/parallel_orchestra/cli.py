@@ -156,6 +156,8 @@ def _status_label(result: TaskResult) -> str:
 
 
 def _format_summary_line(result: TaskResult) -> str:
+    from pathlib import Path  # noqa: PLC0415
+
     label = _status_label(result)
     returncode_str = str(result.returncode) if result.returncode is not None else "None"
     reason = f" ({result.timeout_reason} timeout)" if result.timeout_reason else ""
@@ -165,6 +167,16 @@ def _format_summary_line(result: TaskResult) -> str:
         if result.failure_category != "none"
         else ""
     )
+    # Structured agent output (e.g. tdd-develop JSON: status/cycles/report/reason)
+    agent_info = ""
+    if result.agent_status:
+        agent_info += f" status={result.agent_status}"
+        if result.agent_cycles is not None:
+            agent_info += f" cycles={result.agent_cycles}"
+        if result.agent_report:
+            agent_info += f" report={Path(result.agent_report).name}"
+    if result.agent_reason:
+        agent_info += f" reason={result.agent_reason}"
     return (
         f"[{label}] {result.task_id} ({result.agent})"
         f" duration={result.duration_sec:.2f}"
@@ -172,6 +184,7 @@ def _format_summary_line(result: TaskResult) -> str:
         f"{reason}"
         f"{retries}"
         f"{category}"
+        f"{agent_info}"
     )
 
 

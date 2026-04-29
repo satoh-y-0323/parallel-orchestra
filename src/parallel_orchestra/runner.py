@@ -123,6 +123,11 @@ class TaskResult:
     timeout_reason: Literal["total"] | None = None
     retry_count: int = 0
     failure_category: FailureCategory = "none"
+    # Structured JSON output parsed from agent stdout (e.g. tdd-develop).
+    agent_status: str | None = None    # "SUCCESS" or "FAILED"
+    agent_cycles: int | None = None    # number of TDD/work cycles
+    agent_reason: str | None = None    # failure reason
+    agent_report: str | None = None    # relative path to test-report
 
     @property
     def ok(self) -> bool:
@@ -871,13 +876,53 @@ def _merge_write_branches(
     return tuple(merge_results)
 
 
+def _parse_agent_json(stdout: str) -> dict[str, Any] | None:
+    """Try to parse the last non-empty line of agent stdout as a JSON object."""
+    lines = [line.strip() for line in stdout.splitlines() if line.strip()]
+    if not lines:
+        return None
+    try:
+        data = json.loads(lines[-1])
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+    return None
+
+
+def _copy_test_reports_from_worktree(
+    worktree_path: Path, project_root: Path
+) -> None:
+    """Copy all test-report-*.md files from worktree .claude/reports/ to project."""
+    try:
+        src_dir = worktree_path / ".claude" / "reports"
+        if not src_dir.exists():
+            return
+        dst_dir = project_root / ".claude" / "reports"
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        for report in src_dir.glob("test-report-*.md"):
+            shutil.copy2(report, dst_dir / report.name)
+    except OSError:
+        pass  # best-effort
+
+
 def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
     """Commit any changes left uncommitted by the agent (best-effort).
 
-    Runs git add -A then git commit. If there is nothing to commit,
-    git commit exits non-zero and is silently ignored.
+    Sets core.autocrlf=false first to prevent Windows CRLF conversion from
+    accidentally staging pre-existing tracked files as modified.
     """
     try:
+        # Disable autocrlf to avoid Windows LF→CRLF issues causing false
+        # "modified" state on tracked files when running git add -A.
+        subprocess.run(
+            ["git", "config", "core.autocrlf", "false"],
+            cwd=str(worktree_path),
+            capture_output=True,
+            text=True,
+            timeout=_GIT_COMMAND_TIMEOUT_SEC,
+            check=False,
+        )
         subprocess.run(
             ["git", "add", "-A"],
             cwd=str(worktree_path),
@@ -1133,6 +1178,26 @@ def _execute_task(
                 branch_name=branch_name,
             )
 
+        # Parse structured JSON output from agent (e.g. tdd-develop status/report).
+        agent_json = _parse_agent_json(stdout)
+        agent_status: str | None = None
+        agent_cycles: int | None = None
+        agent_reason: str | None = None
+        agent_report: str | None = None
+        if agent_json:
+            agent_status = str(agent_json["status"]) if "status" in agent_json else None
+            raw_cycles = agent_json.get("cycles")
+            agent_cycles = int(raw_cycles) if raw_cycles is not None else None
+            agent_reason = str(agent_json["reason"]) if "reason" in agent_json else None
+            agent_report = str(agent_json["report"]) if "report" in agent_json else None
+            # If agent explicitly reports FAILED, treat as task failure.
+            if agent_status == "FAILED" and returncode == 0:
+                returncode = 1
+
+        # Copy test-reports from worktree to project before cleanup.
+        if worktree_path is not None:
+            _copy_test_reports_from_worktree(worktree_path, effective_cwd)
+
         # Auto-commit any changes the agent left uncommitted before worktree cleanup.
         if worktree_path is not None and returncode == 0 and not timed_out:
             _auto_commit_worktree(worktree_path, task.id)
@@ -1159,6 +1224,10 @@ def _execute_task(
         duration_sec=duration_sec,
         branch_name=branch_name,
         timeout_reason=timeout_reason,
+        agent_status=agent_status,
+        agent_cycles=agent_cycles,
+        agent_reason=agent_reason,
+        agent_report=agent_report,
     )
 
 
