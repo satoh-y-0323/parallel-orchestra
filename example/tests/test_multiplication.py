@@ -1,22 +1,31 @@
 import pytest
+
 from example.src.multiplication import multiply
 
 
-def test_multiply_two_integers() -> None:
-    assert multiply(3, 4) == 12
+@pytest.mark.parametrize("a,b,expected", [
+    (3, 4, 12),
+    (5, 0, 0),
+    (0, 5, 0),
+    (-2, 3, -6),
+    (-2, -3, 6),
+])
+def test_multiply_integers(a: int, b: int, expected: int) -> None:
+    # Act
+    result = multiply(a, b)
+
+    # Assert
+    assert result == expected
 
 
-def test_multiply_by_zero() -> None:
-    assert multiply(5, 0) == 0
+@pytest.mark.parametrize("a,b,expected", [
+    (1.5, 2.0, 3.0),
+    (2, 2.5, 5.0),
+    (-1.5, 2.0, -3.0),
+])
+def test_multiply_floats(a: float, b: float, expected: float) -> None:
+    # Act
+    result = multiply(a, b)
 
-
-def test_multiply_negative_numbers() -> None:
-    assert multiply(-2, 3) == -6
-
-
-def test_multiply_floats() -> None:
-    assert multiply(1.5, 2.0) == pytest.approx(3.0)
-
-
-def test_multiply_int_and_float() -> None:
-    assert multiply(2, 2.5) == pytest.approx(5.0)
+    # Assert
+    assert result == pytest.approx(expected)
