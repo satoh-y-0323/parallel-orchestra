@@ -19,12 +19,20 @@
 ## インストール
 
 ```bash
-git clone https://github.com/satoh-y-0323/parallel-orchestra.git
-cd parallel-orchestra
-pip install -e .
+pip install parallel-orchestra
 ```
 
 要件: Python 3.10+ / [Claude Code CLI](https://claude.ai/code) が `claude` コマンドとして PATH に通っていること。
+
+### 開発版を入れたい場合
+
+ソースから編集可能インストール:
+
+```bash
+git clone https://github.com/satoh-y-0323/parallel-orchestra.git
+cd parallel-orchestra
+pip install -e ".[dev]"
+```
 
 ---
 
