@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Edit(example/**)",
+      "Write(example/**)",
+      "Edit(.claude/reports/**)",
+      "Write(.claude/reports/**)",
+      "Bash(python *)",
+      "Bash(python -m pytest*)",
+      "Bash(pytest*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(mkdir*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(**/.env)",
+      "Read(**.env.*)"
+    ]
+  }
+}

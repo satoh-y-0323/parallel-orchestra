@@ -177,7 +177,7 @@ def test_read_only_falseタスクにPO_WORKTREE_GUARD_1がセットされる(
     worktree_path = tmp_path / ".po-worktrees" / "task-a-testtest"
     worktree_path.mkdir(parents=True)
 
-    def fake_setup_worktree(git_root, task):
+    def fake_setup_worktree(git_root, task, claude_src_dir=None):
         return worktree_path, "parallel-orchestra/task-a-testtest"
 
     monkeypatch.setattr(runner_module, "_setup_worktree", fake_setup_worktree)

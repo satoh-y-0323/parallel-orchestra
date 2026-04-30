@@ -24,16 +24,13 @@ htmlcov/
 # parallel-orchestra run-state files (contain absolute paths and task IDs)
 .po-run-state-*.json
 
-# parallel-orchestra runtime debug logs (per-task stdout/stderr; merge target none)
-.claude/logs/*.log
-
-# Optional: framework-specific runtime artifacts under .claude/.
-# The patterns below are required when running this project alongside the C3
-# framework, which writes per-session telemetry into .claude/memory/. Adjust
-# or remove these entries to match whatever framework (if any) you pair with
-# parallel-orchestra.
-.claude/memory/sessions/*.tmp
-.claude/memory/agent-debug.log
+# Repository-root .claude/ is reserved as the user's local Claude Code
+# workspace (agent definitions, skills, hooks, harness settings, etc.) and
+# is intentionally not tracked here. The PO-specific demo lives under
+# example/.claude/ instead. Pair parallel-orchestra with whatever framework
+# (or no framework) you like in your own .claude/ — its contents stay
+# private to your machine.
+/.claude/
 
 # Environment variables
 .env

@@ -651,8 +651,21 @@ def _require_git_root(cwd: Path) -> Path:
     return Path(result.stdout.strip())
 
 
-def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
-    """Create an isolated git worktree for *task* and return its path and branch name."""
+def _worktree_setup(
+    git_root: Path,
+    task: Task,
+    claude_src_dir: Path | None = None,
+) -> tuple[Path, str]:
+    """Create an isolated git worktree for *task* and return its path and branch name.
+
+    The worktree is rooted at ``git_root`` (the same git database is used for
+    all worktrees, regardless of where the manifest lives). Agent assets such
+    as plan-reports / skills / agent definitions are copied from
+    ``claude_src_dir`` if provided, otherwise from ``git_root / ".claude"``.
+    Pointing this at the manifest directory's ``.claude/`` lets users keep
+    PO-specific assets under a subproject (e.g. ``example/.claude/``) while
+    using a shared parent git repository.
+    """
     worktree_root = git_root / _WORKTREE_ROOT_NAME
     worktree_root.mkdir(exist_ok=True)
 
@@ -687,7 +700,7 @@ def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
     # permission patterns to be evaluated against the wrong base path.
     # settings.local.json is handled separately below.
     _CLAUDE_SKIP = frozenset({"CLAUDE.md", "settings.json", "settings.local.json", "logs", "memory"})
-    claude_src = git_root / ".claude"
+    claude_src = claude_src_dir if claude_src_dir is not None else git_root / ".claude"
     if claude_src.exists():
         for item in claude_src.iterdir():
             if item.name in _CLAUDE_SKIP:
@@ -710,7 +723,7 @@ def _worktree_setup(git_root: Path, task: Task) -> tuple[Path, str]:
             except OSError:
                 pass  # best-effort: never block worktree creation
 
-    settings_local = git_root / ".claude" / "settings.local.json"
+    settings_local = claude_src / "settings.local.json"
     if settings_local.exists():
         shutil.copy2(settings_local, dest_dir / "settings.local.json")
     # Empty CLAUDE.md prevents startup protocols in worktree agents.
@@ -747,9 +760,13 @@ def _resolve_merge_base_branch(
     return result.stdout.strip()
 
 
-def _setup_worktree(git_root: Path, task: Task) -> tuple[Path, str | None]:
+def _setup_worktree(
+    git_root: Path,
+    task: Task,
+    claude_src_dir: Path | None = None,
+) -> tuple[Path, str | None]:
     """Invoke ``_worktree_setup`` and normalise the return value to a 2-tuple."""
-    result = _worktree_setup(git_root, task)
+    result = _worktree_setup(git_root, task, claude_src_dir=claude_src_dir)
     if isinstance(result, tuple):
         return result
     return result, None
@@ -1150,7 +1167,15 @@ def _execute_task(
             raise RunnerError(
                 f"git_root must be provided for non-read-only task {task.id!r}"
             )
-        worktree_path, branch_name = _setup_worktree(git_root, task)
+        # Source the worktree's .claude/ from the manifest's effective_cwd
+        # when one exists there; otherwise fall back to the git-root's
+        # .claude/. This lets a manifest under example/ pick up
+        # example/.claude/ even though the git database lives at the parent.
+        manifest_claude_dir = effective_cwd / ".claude"
+        claude_src_dir = manifest_claude_dir if manifest_claude_dir.exists() else None
+        worktree_path, branch_name = _setup_worktree(
+            git_root, task, claude_src_dir=claude_src_dir
+        )
         task_cwd = worktree_path
         env["PO_WORKTREE_GUARD"] = "1"
     else:
