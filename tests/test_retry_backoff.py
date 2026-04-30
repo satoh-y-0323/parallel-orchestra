@@ -214,20 +214,20 @@ class TestRateLimitedTaskIsRetried:
 # ===========================================================================
 
 
-def test_内部リトライ遅延が0秒のデフォルトである():
-    """Internal retry delay constant defaults to 0.0 (no delay)."""
+def test_内部リトライ遅延が1秒のデフォルトである():
+    """Internal retry delay constant defaults to 1.0 second."""
     import parallel_orchestra.runner as runner_module
-    assert runner_module._INTERNAL_RETRY_DELAY_SEC == 0.0
+    assert runner_module._INTERNAL_RETRY_DELAY_SEC == 1.0
 
 
-def test_内部バックオフ係数が1_0のデフォルトである():
-    """Internal retry backoff factor constant defaults to 1.0 (no backoff)."""
+def test_内部バックオフ係数が2_0のデフォルトである():
+    """Internal retry backoff factor constant defaults to 2.0."""
     import parallel_orchestra.runner as runner_module
-    assert runner_module._INTERNAL_RETRY_BACKOFF_FACTOR == 1.0
+    assert runner_module._INTERNAL_RETRY_BACKOFF_FACTOR == 2.0
 
 
-def test_retry_delay_secのデフォルトでsleepが呼ばれない(monkeypatch):
-    """Default internal retry delay (0.0) does NOT call time.sleep."""
+def test_retry_delay_secのデフォルトでsleepが呼ばれる(monkeypatch):
+    """Default internal retry delay (1.0s) is applied before each retry."""
     import parallel_orchestra.runner as runner_module
 
     sleep_calls: list[float] = []
@@ -249,4 +249,5 @@ def test_retry_delay_secのデフォルトでsleepが呼ばれない(monkeypatch
     task = _make_task(max_retries=1)
     execute_with_retry(task, "claude", git_root=None, effective_cwd=Path("."), log_config=None)
 
-    assert len(sleep_calls) == 0, f"Expected no sleep calls, got {len(sleep_calls)}"
+    # 1 retry → 1 sleep call. delay = 1.0 * 2.0^0 = 1.0s.
+    assert sleep_calls == [1.0], f"Expected single 1.0s sleep, got {sleep_calls}"

@@ -388,7 +388,7 @@ def _parse_task(
         else (
             defaults.max_retries
             if defaults is not None and defaults.max_retries is not None
-            else 0
+            else 1
         )
     )
     max_retries: int = _parse_non_negative_int(

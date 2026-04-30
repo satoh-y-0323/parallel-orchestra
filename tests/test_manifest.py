@@ -370,11 +370,11 @@ def test_envのデフォルト値が空dictである(manifest_file):
         assert task.env == {}
 
 
-def test_max_retriesのデフォルト値が0である(manifest_file):
+def test_max_retriesのデフォルト値が1である(manifest_file):
     path = manifest_file(MINIMAL_VALID)
     result = load_manifest(path)
     for task in result.tasks:
-        assert task.max_retries == 0
+        assert task.max_retries == 1
 
 
 def test_promptのデフォルト値がagentから生成される(manifest_file):

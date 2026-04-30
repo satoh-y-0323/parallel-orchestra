@@ -65,8 +65,8 @@ _TOOL_ACTION_MAX_LEN = 45
 
 # Internally managed constants — not configurable via manifest.
 _INTERNAL_TIMEOUT_SEC: int = 900
-_INTERNAL_RETRY_DELAY_SEC: float = 0.0
-_INTERNAL_RETRY_BACKOFF_FACTOR: float = 1.0
+_INTERNAL_RETRY_DELAY_SEC: float = 1.0
+_INTERNAL_RETRY_BACKOFF_FACTOR: float = 2.0
 
 _PERMANENT_RETURNCODES: frozenset[int] = frozenset({2, 126, 127})
 
@@ -625,7 +625,8 @@ def _execute_with_retry(
         if attempt >= task.max_retries:
             return _with_retry_info(result, retry_count=attempt, category=category)
 
-        # Retry with internal delay (0.0 by default — no sleep).
+        # Exponential backoff: delay = base * factor^attempt
+        # (defaults: 1.0s base, factor 2.0 → 1s, 2s, 4s, ...).
         delay: float = _INTERNAL_RETRY_DELAY_SEC * (_INTERNAL_RETRY_BACKOFF_FACTOR ** attempt)
         if delay > 0:
             time.sleep(delay)

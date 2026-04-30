@@ -48,9 +48,11 @@ tasks:
   - id: task-a
     agent: code-reviewer
     read_only: true
+    max_retries: 0
   - id: task-b
     agent: security-reviewer
     read_only: true
+    max_retries: 0
     depends_on:
       - task-a
 ---
@@ -134,14 +136,17 @@ tasks:
   - id: task-a
     agent: code-reviewer
     read_only: true
+    max_retries: 0
   - id: task-b
     agent: security-reviewer
     read_only: true
+    max_retries: 0
     depends_on:
       - task-a
   - id: task-c
     agent: developer
     read_only: true
+    max_retries: 0
     depends_on:
       - task-b
 ---
