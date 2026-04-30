@@ -902,14 +902,17 @@ def _parse_agent_json(stdout: str) -> dict[str, Any] | None:
 def _copy_test_reports_from_worktree(
     worktree_path: Path, project_root: Path
 ) -> None:
-    """Copy all test-report-*.md files from worktree .claude/reports/ to project."""
+    """Copy test-report-*.md files from worktree .claude/reports/ to project.
+
+    Only invoked on task failure / timeout. On success the worktree branch
+    auto-commits these files and the subsequent merge brings them into main;
+    copying beforehand creates untracked duplicates that block the merge.
+    """
     try:
         src_dir = worktree_path / ".claude" / "reports"
-        print(f"[DEBUG] test-report copy: src_dir={src_dir} exists={src_dir.exists()}", file=sys.stderr)
         if not src_dir.exists():
             return
         reports = list(src_dir.glob("test-report-*.md"))
-        print(f"[DEBUG] test-report copy: found {len(reports)} reports: {[r.name for r in reports]}", file=sys.stderr)
         dst_dir = project_root / ".claude" / "reports"
         dst_dir.mkdir(parents=True, exist_ok=True)
         for report in reports:
@@ -1206,13 +1209,14 @@ def _execute_task(
             if agent_status == "FAILED" and returncode == 0:
                 returncode = 1
 
-        # Copy test-reports from worktree to project before cleanup.
-        if worktree_path is not None:
-            _copy_test_reports_from_worktree(worktree_path, effective_cwd)
-
         # Auto-commit any changes the agent left uncommitted before worktree cleanup.
+        # On success the worktree branch is later merged into main, which brings
+        # any test-reports along; on failure / timeout the merge is skipped, so
+        # copy test-reports out of the worktree for post-mortem inspection.
         if worktree_path is not None and returncode == 0 and not timed_out:
             _auto_commit_worktree(worktree_path, task.id)
+        elif worktree_path is not None:
+            _copy_test_reports_from_worktree(worktree_path, effective_cwd)
 
     finally:
         if worktree_path is not None and git_root is not None:

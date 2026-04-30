@@ -24,6 +24,13 @@ htmlcov/
 # parallel-orchestra run-state files (contain absolute paths and task IDs)
 .po-run-state-*.json
 
+# parallel-orchestra runtime debug logs (per-task stdout/stderr; merge target none)
+.claude/logs/*.log
+
+# C3 session telemetry (parent-session local; not meant to merge)
+.claude/memory/sessions/*.tmp
+.claude/memory/agent-debug.log
+
 # Environment variables
 .env
 .env.*

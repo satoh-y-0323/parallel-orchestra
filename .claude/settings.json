@@ -6,19 +6,16 @@
       "Bash(python .claude/hooks/stop.py*)",
       "Bash(python .claude/hooks/pre_tool.py*)",
       "Bash(python .claude/hooks/pre_compact.py*)",
-      "Bash(python .claude/hooks/log_agent.py*)",
       "Bash(python .claude/hooks/validate_skill_change.py*)",
       "Bash(python .claude/hooks/statusline.py*)",
       "Read(**)",
       "Glob(**)",
       "Grep(**)",
       "Edit(.claude/reports/**)",
-      "Update(.claude/reports/**)",
       "Write(.claude/reports/**)",
       "Write(.claude/tmp/**)",
       "Write(.claude/memory/**)",
       "Edit(.claude/memory/sessions/**)",
-      "Update(.claude/memory/sessions/**)",
       "Write(.claude/memory/sessions/**)",
       "Write(.claude/rules/promoted/**)",
       "Write(.claude/skills/promoted/**)",
@@ -27,16 +24,7 @@
       "Bash(git log*)",
       "Bash(git add*)",
       "Bash(git commit*)",
-      "Bash(git rev-parse*)",
-      "Bash(git status*)",
-      "Bash(git commit*)",
-      "Bash(git add*)",
-      "Write(example/**)",
-      "Edit(example/**)",
-      "Bash(pytest*)",
-      "Bash(python -m pytest*)",
-      "Bash(mkdir*)",
-      "Bash(python*)"
+      "Bash(git rev-parse*)"
     ],
     "deny": [
       "Read(.env)",
@@ -92,15 +80,6 @@
       }
     ],
     "PostToolUse": [
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/log_agent.py"
-          }
-        ]
-      },
       {
         "matcher": "Write",
         "hooks": [
