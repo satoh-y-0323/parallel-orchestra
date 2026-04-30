@@ -59,4 +59,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: pip-audit
-        run: pip-audit --strict
+        # --skip-editable: don't try to look up the in-tree project itself
+        # (parallel-orchestra) on PyPI; it isn't published yet. Real
+        # third-party deps are still scanned.
+        run: pip-audit --strict --skip-editable
