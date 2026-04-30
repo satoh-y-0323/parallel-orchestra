@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-01
+### Added
+- `.github/workflows/publish.yml` — PyPI Trusted Publisher workflow.
+  Builds sdist + wheel and uploads to PyPI through OIDC when a GitHub
+  Release is published, so no PyPI API token has to live in repo
+  secrets.
+
+### Fixed
+- CI's `pip-audit` step no longer fails on the in-tree editable install
+  of the project itself. Adds `--skip-editable` and drops `--strict`
+  so the audit reports only real third-party CVEs.
+
 ## [0.1.0] - 2026-04-30
 ### Added
 - First public release.
@@ -31,5 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `example/` mini-project demonstrating a parallel TDD workflow with
   `tdd-develop → tester → developer → tester` sub-agents.
 
-[Unreleased]: https://github.com/satoh-y-0323/parallel-orchestra/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/satoh-y-0323/parallel-orchestra/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/satoh-y-0323/parallel-orchestra/releases/tag/v0.1.1
 [0.1.0]: https://github.com/satoh-y-0323/parallel-orchestra/releases/tag/v0.1.0
