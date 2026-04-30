@@ -27,7 +27,11 @@ htmlcov/
 # parallel-orchestra runtime debug logs (per-task stdout/stderr; merge target none)
 .claude/logs/*.log
 
-# C3 session telemetry (parent-session local; not meant to merge)
+# Optional: framework-specific runtime artifacts under .claude/.
+# The patterns below are required when running this project alongside the C3
+# framework, which writes per-session telemetry into .claude/memory/. Adjust
+# or remove these entries to match whatever framework (if any) you pair with
+# parallel-orchestra.
 .claude/memory/sessions/*.tmp
 .claude/memory/agent-debug.log
 
