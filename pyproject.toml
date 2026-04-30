@@ -6,13 +6,44 @@ build-backend = "setuptools.build_meta"
 name = "parallel-orchestra"
 version = "0.1.0"
 description = "Run Claude Code agents in parallel from a YAML-frontmatter Markdown manifest, with git worktree isolation for write tasks."
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0"]
+authors = [
+    { name = "satoh-y-0323", email = "shoma.papa.0323@gmail.com" },
+]
+keywords = [
+    "claude-code",
+    "parallel",
+    "orchestration",
+    "agent",
+    "cli",
+    "tdd",
+    "worktree",
+]
+# TODO: pick a license before publishing (MIT / Apache-2.0 / etc.) and add a
+# matching LICENSE file. Until then, leave the SPDX expression unset.
+# license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Utilities",
+]
 
 [project.urls]
 Homepage = "https://github.com/satoh-y-0323/parallel-orchestra"
 Repository = "https://github.com/satoh-y-0323/parallel-orchestra"
+Documentation = "https://github.com/satoh-y-0323/parallel-orchestra#readme"
 "Bug Tracker" = "https://github.com/satoh-y-0323/parallel-orchestra/issues"
+Changelog = "https://github.com/satoh-y-0323/parallel-orchestra/releases"
 
 [project.scripts]
 parallel-orchestra = "parallel_orchestra.cli:main"
@@ -48,6 +79,21 @@ select = ["E", "F", "I", "UP"]
 addopts = "-m 'not slow'"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["parallel_orchestra"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]
 
 [tool.mypy]
