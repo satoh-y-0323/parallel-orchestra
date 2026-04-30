@@ -192,7 +192,13 @@ class _TaskDisplayState:
 class _Dashboard:
     """ANSI in-place progress dashboard for TTY terminals."""
 
-    def __init__(self, task_ids: list[str], *, enabled: bool, live_renders: bool = True) -> None:
+    def __init__(
+        self,
+        task_ids: list[str],
+        *,
+        enabled: bool,
+        live_renders: bool = True,
+    ) -> None:
         self._enabled = enabled
         self._live_renders = live_renders
         self._task_ids: list[str] = list(task_ids)
@@ -246,7 +252,11 @@ class _Dashboard:
             self._dirty_event.set()
 
     def _render_loop(self) -> None:
-        interval = _DASHBOARD_IDLE_RENDER_SEC if self._live_renders else _DASHBOARD_NONLIVE_RENDER_SEC
+        interval = (
+            _DASHBOARD_IDLE_RENDER_SEC
+            if self._live_renders
+            else _DASHBOARD_NONLIVE_RENDER_SEC
+        )
         last_render_ts = 0.0
         while not self._stop_event.is_set():
             self._dirty_event.wait(timeout=interval)
@@ -272,7 +282,12 @@ class _Dashboard:
         now = time.perf_counter()
 
         if final:
-            n_complete, n_failed, n_skipped_or_resumed, n_total = self._count_final_stats()
+            (
+                n_complete,
+                n_failed,
+                n_skipped_or_resumed,
+                n_total,
+            ) = self._count_final_stats()
             if n_failed == 0 and n_skipped_or_resumed == 0:
                 return f"[done] all {n_total} tasks completed"
             final_parts: list[str] = [f"{n_complete}/{n_total} succeeded"]
@@ -346,7 +361,12 @@ class _Dashboard:
         now = time.perf_counter()
 
         if final:
-            n_complete, n_failed, _n_skipped_or_resumed, n_total = self._count_final_stats()
+            (
+                n_complete,
+                n_failed,
+                _n_skipped_or_resumed,
+                n_total,
+            ) = self._count_final_stats()
             if n_failed > 0:
                 header = (
                     f"parallel-orchestra done"
@@ -627,7 +647,9 @@ def _execute_with_retry(
 
         # Exponential backoff: delay = base * factor^attempt
         # (defaults: 1.0s base, factor 2.0 → 1s, 2s, 4s, ...).
-        delay: float = _INTERNAL_RETRY_DELAY_SEC * (_INTERNAL_RETRY_BACKOFF_FACTOR ** attempt)
+        delay: float = _INTERNAL_RETRY_DELAY_SEC * (
+            _INTERNAL_RETRY_BACKOFF_FACTOR ** attempt
+        )
         if delay > 0:
             time.sleep(delay)
 
@@ -699,7 +721,9 @@ def _worktree_setup(
     # main repo (via the git worktree pointer), so copying it would cause
     # permission patterns to be evaluated against the wrong base path.
     # settings.local.json is handled separately below.
-    _CLAUDE_SKIP = frozenset({"CLAUDE.md", "settings.json", "settings.local.json", "logs", "memory"})
+    _CLAUDE_SKIP = frozenset(
+        {"CLAUDE.md", "settings.json", "settings.local.json", "logs", "memory"}
+    )
     claude_src = claude_src_dir if claude_src_dir is not None else git_root / ".claude"
     if claude_src.exists():
         for item in claude_src.iterdir():
@@ -964,8 +988,9 @@ def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=False,
         )
+        commit_message = f"parallel-orchestra: task {task_id} [auto-commit]"
         subprocess.run(
-            ["git", "commit", "-m", f"parallel-orchestra: task {task_id} [auto-commit]"],
+            ["git", "commit", "-m", commit_message],
             cwd=str(worktree_path),
             capture_output=True,
             text=True,

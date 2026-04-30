@@ -1,0 +1,14 @@
+# Files that should ship in the source distribution (sdist) in addition to
+# the package source under src/. setuptools auto-includes pyproject.toml,
+# README.md, and LICENSE; everything else listed here is opt-in.
+
+include CHANGELOG.md
+recursive-include tests *.py *.md
+recursive-include example *.py *.md *.json *.toml
+
+# Never include build / runtime artefacts even if they happen to be on disk
+# during packaging.
+prune .po-worktrees
+prune .claude
+global-exclude __pycache__
+global-exclude *.py[cod]

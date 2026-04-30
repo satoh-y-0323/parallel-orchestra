@@ -169,9 +169,8 @@ def test_read_only_falseタスクにPO_WORKTREE_GUARD_1がセットされる(
 ):
     """read_only=false tasks must have PO_WORKTREE_GUARD=1 in environment."""
     import os
-    import parallel_orchestra.runner as runner_module
 
-    captured_envs: list[dict] = []
+    import parallel_orchestra.runner as runner_module
 
     # Mock _setup_worktree to avoid git dependency
     worktree_path = tmp_path / ".po-worktrees" / "task-a-testtest"
