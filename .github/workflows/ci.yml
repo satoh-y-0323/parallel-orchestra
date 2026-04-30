@@ -59,7 +59,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: pip-audit
-        # --skip-editable: don't try to look up the in-tree project itself
-        # (parallel-orchestra) on PyPI; it isn't published yet. Real
-        # third-party deps are still scanned.
-        run: pip-audit --strict --skip-editable
+        # --skip-editable: don't audit the in-tree project itself
+        # (parallel-orchestra) — it isn't published on PyPI, so resolution
+        # would always fail.
+        # --strict is intentionally dropped: it would upgrade the
+        # "skipped editable" notice to a hard error. Real CVEs in
+        # third-party deps still produce a non-zero exit on their own.
+        run: pip-audit --skip-editable
