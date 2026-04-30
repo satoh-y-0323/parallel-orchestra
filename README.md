@@ -1,4 +1,4 @@
-# parallel-orchestra
+# parallel-orchestra (PO)
 
 複数の Claude Code ヘッドレスエージェントを **並列実行**し、結果を一つのブランチに**自動マージ**する CLI ツール。
 
