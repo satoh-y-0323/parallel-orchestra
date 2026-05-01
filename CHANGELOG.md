@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Git subprocess invocations now explicitly use `encoding="utf-8"` with
+  `errors="replace"`. On Windows, `text=True` alone fell back to the
+  system code page (cp932 in Japanese locales), which made any git
+  output containing non-ASCII bytes (commit messages, file names,
+  localized error strings) crash the runner with `UnicodeDecodeError`.
 
 ## [0.1.1] - 2026-05-01
 ### Added

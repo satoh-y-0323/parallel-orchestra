@@ -664,6 +664,8 @@ def _require_git_root(cwd: Path) -> Path:
             cwd=str(cwd),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=True,
         )
@@ -702,6 +704,8 @@ def _worktree_setup(
             cwd=str(git_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=True,
         )
@@ -774,6 +778,8 @@ def _resolve_merge_base_branch(
         cwd=str(cwd),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
     )
     if result.returncode != 0:
@@ -803,6 +809,8 @@ def _abort_merge(cwd: Path, timeout: int = _GIT_COMMAND_TIMEOUT_SEC) -> None:
             cwd=str(cwd),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -819,6 +827,8 @@ def _delete_branch(
             cwd=str(cwd),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -847,6 +857,8 @@ def _merge_single_branch(
             cwd=str(cwd),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -977,6 +989,8 @@ def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
             cwd=str(worktree_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=False,
         )
@@ -985,6 +999,8 @@ def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
             cwd=str(worktree_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=False,
         )
@@ -994,6 +1010,8 @@ def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
             cwd=str(worktree_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=False,
         )
@@ -1009,6 +1027,8 @@ def _worktree_cleanup(git_root: Path, worktree_path: Path) -> None:
             cwd=str(git_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=True,
         )
