@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.2] - 2026-05-01
 ### Fixed
 - Git subprocess invocations now explicitly use `encoding="utf-8"` with
   `errors="replace"`. On Windows, `text=True` alone fell back to the
@@ -49,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `example/` mini-project demonstrating a parallel TDD workflow with
   `tdd-develop → tester → developer → tester` sub-agents.
 
-[Unreleased]: https://github.com/satoh-y-0323/parallel-orchestra/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/satoh-y-0323/parallel-orchestra/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/satoh-y-0323/parallel-orchestra/releases/tag/v0.1.2
 [0.1.1]: https://github.com/satoh-y-0323/parallel-orchestra/releases/tag/v0.1.1
 [0.1.0]: https://github.com/satoh-y-0323/parallel-orchestra/releases/tag/v0.1.0
