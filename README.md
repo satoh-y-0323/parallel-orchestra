@@ -156,7 +156,7 @@ parallel-orchestra run <manifest>
                               worktree cleanup
 ```
 
-成功時の test-report 等は worktree branch の auto-commit に乗って merge 経由で main に取り込まれます。失敗時は worktree から手元へ post-mortem 用にコピーされます。
+成功時のエージェント出力は worktree branch の auto-commit に乗って merge 経由で main に取り込まれます。失敗時は `PO_KEEP_WORKTREE=1` を設定することで worktree を保持して post-mortem 調査ができます。
 
 ---
 
