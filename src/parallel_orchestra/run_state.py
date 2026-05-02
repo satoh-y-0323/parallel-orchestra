@@ -9,11 +9,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Maximum allowed size of the run-state file.  Files larger than this are
+# treated as malformed to prevent local DoS via memory exhaustion.
+_MAX_STATE_FILE_BYTES: int = 1 * 1024 * 1024  # 1 MiB
 
 # ---------------------------------------------------------------------------
 # Data class
@@ -76,21 +86,30 @@ def load_run_state(manifest_path: Path) -> RunState | None:
     if not state_path.exists():
         return None
 
+    file_size = state_path.stat().st_size
+    if file_size > _MAX_STATE_FILE_BYTES:
+        logger.warning(
+            "--resume: state file %s is suspiciously large (%d bytes), ignoring.",
+            state_path,
+            file_size,
+        )
+        return None
+
     try:
         raw = json.loads(state_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        print(
-            f"Warning: --resume: failed to parse state file {state_path}: {exc}."
-            " Falling back to normal run.",
-            file=sys.stderr,
+        logger.warning(
+            "--resume: failed to parse state file %s: %s. Falling back to normal run.",
+            state_path,
+            exc,
         )
         return None
 
     if not isinstance(raw, dict):
-        print(
-            f"Warning: --resume: state file {state_path} is malformed: "
-            "expected a JSON object at top level. Falling back to normal run.",
-            file=sys.stderr,
+        logger.warning(
+            "--resume: state file %s is malformed: expected a JSON object at top level."
+            " Falling back to normal run.",
+            state_path,
         )
         return None
 
@@ -98,19 +117,18 @@ def load_run_state(manifest_path: Path) -> RunState | None:
         saved_hash: str = raw["manifest_hash"]
         completed_tasks: list[str] = raw.get("completed_tasks", [])
     except (KeyError, TypeError) as exc:
-        print(
-            f"Warning: --resume: state file {state_path} is malformed: {exc}."
-            " Falling back to normal run.",
-            file=sys.stderr,
+        logger.warning(
+            "--resume: state file %s is malformed: %s. Falling back to normal run.",
+            state_path,
+            exc,
         )
         return None
 
     current_hash = _hash_manifest(manifest_path)
     if saved_hash != current_hash:
-        print(
-            "Warning: --resume: manifest has changed since the last run"
+        logger.warning(
+            "--resume: manifest has changed since the last run"
             " (hash mismatch). Falling back to normal run.",
-            file=sys.stderr,
         )
         return None
 
@@ -152,9 +170,8 @@ def delete_run_state(manifest_path: Path) -> None:
     try:
         state_path.unlink(missing_ok=True)
     except OSError as exc:
-        print(
-            f"Warning: run-state: failed to delete state file {state_path}: {exc}.",
-            file=sys.stderr,
+        logger.warning(
+            "run-state: failed to delete state file %s: %s.", state_path, exc
         )
 
 
@@ -181,10 +198,11 @@ def _persist(state: RunState, manifest_path: Path) -> None:
         )
         os.replace(tmp_path, state_path)
     except OSError as exc:
-        print(
-            f"Warning: run-state: failed to persist state to {state_path}: {exc}."
+        logger.warning(
+            "run-state: failed to persist state to %s: %s."
             " --resume will not be able to skip this task on the next run.",
-            file=sys.stderr,
+            state_path,
+            exc,
         )
         try:
             tmp_path.unlink(missing_ok=True)

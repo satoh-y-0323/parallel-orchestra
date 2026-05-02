@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -124,7 +125,7 @@ def test_load_run_state_returns_none_when_absent(tmp_path: Path) -> None:
 
 
 def test_load_run_state_returns_none_on_hash_mismatch(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.md"
     manifest_path.write_text(SINGLE_TASK_CONTENT, encoding="utf-8")
@@ -132,30 +133,30 @@ def test_load_run_state_returns_none_on_hash_mismatch(
 
     manifest_path.write_text(SINGLE_TASK_CONTENT + "\n# changed", encoding="utf-8")
 
-    result = load_run_state(manifest_path)
-    captured = capsys.readouterr()
+    with caplog.at_level(logging.WARNING, logger="parallel_orchestra.run_state"):
+        result = load_run_state(manifest_path)
 
     assert result is None
-    assert "Warning" in captured.err or "hash mismatch" in captured.err
+    assert any("hash mismatch" in r.message for r in caplog.records)
 
 
 def test_load_run_state_returns_none_on_malformed_json(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.md"
     manifest_path.write_text(SINGLE_TASK_CONTENT, encoding="utf-8")
 
     _state_path(manifest_path).write_text("{ not valid json }", encoding="utf-8")
 
-    result = load_run_state(manifest_path)
-    captured = capsys.readouterr()
+    with caplog.at_level(logging.WARNING, logger="parallel_orchestra.run_state"):
+        result = load_run_state(manifest_path)
 
     assert result is None
-    assert "Warning" in captured.err or "failed to parse" in captured.err
+    assert any("failed to parse" in r.message for r in caplog.records)
 
 
 def test_load_run_state_returns_none_on_missing_field(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.md"
     manifest_path.write_text(SINGLE_TASK_CONTENT, encoding="utf-8")
@@ -164,19 +165,18 @@ def test_load_run_state_returns_none_on_missing_field(
         json.dumps({"completed_tasks": []}), encoding="utf-8"
     )
 
-    result = load_run_state(manifest_path)
-    captured = capsys.readouterr()
+    with caplog.at_level(logging.WARNING, logger="parallel_orchestra.run_state"):
+        result = load_run_state(manifest_path)
 
     assert result is None
-    assert (
-        "Warning" in captured.err
-        or "malformed" in captured.err
-        or "Falling back" in captured.err
+    assert any(
+        "malformed" in r.message or "Falling back" in r.message
+        for r in caplog.records
     )
 
 
 def test_load_run_state_returns_none_on_non_dict_json(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.md"
     manifest_path.write_text(SINGLE_TASK_CONTENT, encoding="utf-8")
@@ -185,11 +185,11 @@ def test_load_run_state_returns_none_on_non_dict_json(
         json.dumps(["not", "a", "dict"]), encoding="utf-8"
     )
 
-    result = load_run_state(manifest_path)
-    captured = capsys.readouterr()
+    with caplog.at_level(logging.WARNING, logger="parallel_orchestra.run_state"):
+        result = load_run_state(manifest_path)
 
     assert result is None
-    assert "Warning" in captured.err or "malformed" in captured.err
+    assert any("malformed" in r.message for r in caplog.records)
 
 
 def test_load_run_state_restores_completed_tasks(tmp_path: Path) -> None:

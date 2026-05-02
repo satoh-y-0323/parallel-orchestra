@@ -156,8 +156,6 @@ def _status_label(result: TaskResult) -> str:
 
 
 def _format_summary_line(result: TaskResult) -> str:
-    from pathlib import Path  # noqa: PLC0415
-
     label = _status_label(result)
     returncode_str = str(result.returncode) if result.returncode is not None else "None"
     reason = f" ({result.timeout_reason} timeout)" if result.timeout_reason else ""

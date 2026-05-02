@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import logging
 import os
 import re
 import shutil
@@ -16,6 +17,7 @@ import sys
 import threading
 import time
 import traceback
+import unicodedata
 import urllib.error
 import urllib.request
 import uuid
@@ -81,6 +83,13 @@ _RATE_LIMITED_STDERR_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"rate[\s_-]?limit", re.IGNORECASE),
     re.compile(r"quota[\s_-]?(exceeded|exhausted)", re.IGNORECASE),
 )
+
+# Environment variable keys whose values must be masked in log output.
+_SENSITIVE_ENV_KEYS: frozenset[str] = frozenset(
+    {"ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY_HELPER"}
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -483,10 +492,7 @@ def _send_webhook(
         with opener.open(req, timeout=_WEBHOOK_TIMEOUT_SEC):
             pass
     except (urllib.error.URLError, OSError, ValueError) as exc:
-        print(
-            f"Warning: webhook notification failed ({event}): {exc}",
-            file=sys.stderr,
-        )
+        logger.warning("webhook notification failed (%s): %s", event, exc)
 
 
 def _dispatch_webhooks(
@@ -528,12 +534,23 @@ def _dispatch_webhooks(
 
 
 def _sanitize_for_display(text: str, max_len: int = _TOOL_ACTION_MAX_LEN) -> str:
-    """Remove ANSI escapes and control characters from user-visible terminal output."""
+    """Remove ANSI escapes, control characters, and Unicode spoofing characters.
+
+    This function is intended for **display purposes only** (e.g. terminal UI
+    action strings).  As a side-effect of stripping Unicode ``Cc`` category
+    characters, newline (``\\n``) and tab (``\\t``) characters are also removed.
+    Do not use this function on text that must preserve whitespace semantics.
+    """
     text = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", text)
     text = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)", "", text)
     text = re.sub(r"\x1b.", "", text)
     text = text.replace("\x1b", "")
     text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "", text)
+    # Strip Unicode direction-override and zero-width characters (Cf/Cc categories)
+    # to prevent terminal UI spoofing via bi-directional control characters.
+    text = "".join(
+        ch for ch in text if unicodedata.category(ch) not in ("Cf", "Cc")
+    )
     if len(text) > max_len:
         text = text[:max_len - 3] + "..."
     return text
@@ -577,6 +594,25 @@ def _with_retry_info(
     )
 
 
+def _mask_sensitive_env_values(text: str) -> str:
+    """Replace known sensitive environment variable values with a placeholder.
+
+    Scans the process environment for keys listed in ``_SENSITIVE_ENV_KEYS`` and
+    replaces any occurrence of their current value in *text* with ``[MASKED]``.
+
+    Limitation: only the raw (plain-text) form of each value is matched via
+    simple string substitution.  If a sensitive value appears in *text* as a
+    URL-encoded (``%XX``) or Base64-encoded string, it will **not** be masked.
+    This is an accepted limitation for the current use case where log content
+    originates from Claude process output rather than encoded HTTP traffic.
+    """
+    for key in _SENSITIVE_ENV_KEYS:
+        value = os.environ.get(key)
+        if value:  # mask any non-empty value
+            text = text.replace(value, "[MASKED]")
+    return text
+
+
 def _write_task_logs(
     task_id: str,
     stdout: str,
@@ -589,19 +625,28 @@ def _write_task_logs(
     if not log_config.enabled:
         return
     try:
-        log_config.base_dir.mkdir(parents=True, exist_ok=True)
+        log_config.base_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         stdout_path = log_config.base_dir / f"{task_id}-stdout.log"
         stderr_path = log_config.base_dir / f"{task_id}-stderr.log"
         mode = "w" if attempt == 0 else "a"
         header = f"\n===== retry attempt {attempt} =====\n" if attempt > 0 else ""
+        safe_stdout = _mask_sensitive_env_values(stdout)
+        safe_stderr = _mask_sensitive_env_values(stderr)
         with stdout_path.open(mode, encoding="utf-8", errors="replace") as fp:
             fp.write(header)
-            fp.write(stdout)
+            fp.write(safe_stdout)
+        # NOTE: There is a small window between open() and chmod() during which
+        # another process could read the file.  pathlib.Path.open() does not
+        # expose an atomic open-with-mode API, so this two-step approach is the
+        # best achievable with the standard library.
+        stdout_path.chmod(0o600)
         with stderr_path.open(mode, encoding="utf-8", errors="replace") as fp:
             fp.write(header)
-            fp.write(stderr)
-    except OSError:
-        pass
+            fp.write(safe_stderr)
+        # Same non-atomic window as above; accepted limitation.
+        stderr_path.chmod(0o600)
+    except OSError as exc:
+        logger.warning("_write_task_logs: failed to write logs for task %r: %s", task_id, exc)
 
 
 def _execute_with_retry(
@@ -766,6 +811,21 @@ def _sanitize_git_stderr(text: str) -> str:
     return text
 
 
+def _setup_worktree(
+    git_root: Path,
+    task: Task,
+    claude_src_dir: Path | None = None,
+) -> tuple[Path, str]:
+    """Create an isolated git worktree for *task*; thin wrapper for ``_worktree_setup``.
+
+    This wrapper exists solely as a monkeypatch seam for tests.
+    Do not call ``_worktree_setup`` directly from test code — patch this
+    function instead so the injection point remains stable even if the
+    underlying implementation is refactored.
+    """
+    return _worktree_setup(git_root, task, claude_src_dir=claude_src_dir)
+
+
 def _resolve_merge_base_branch(
     cwd: Path, timeout: int = _GIT_COMMAND_TIMEOUT_SEC
 ) -> str:
@@ -785,18 +845,6 @@ def _resolve_merge_base_branch(
             "Please check out a branch before running parallel-orchestra."
         )
     return result.stdout.strip()
-
-
-def _setup_worktree(
-    git_root: Path,
-    task: Task,
-    claude_src_dir: Path | None = None,
-) -> tuple[Path, str | None]:
-    """Invoke ``_worktree_setup`` and normalise the return value to a 2-tuple."""
-    result = _worktree_setup(git_root, task, claude_src_dir=claude_src_dir)
-    if isinstance(result, tuple):
-        return result
-    return result, None
 
 
 def _abort_merge(cwd: Path, timeout: int = _GIT_COMMAND_TIMEOUT_SEC) -> None:
@@ -1172,7 +1220,10 @@ def _execute_task(
     PO_WORKTREE_GUARD=1 is set in the environment automatically.
     For read_only=True tasks, effective_cwd (passed by the caller) is used.
     """
-    cmd = [claude_exe, "--dangerously-skip-permissions"]
+    if task.read_only:
+        cmd = [claude_exe, "--read-only"]
+    else:
+        cmd = [claude_exe, "--dangerously-skip-permissions"]
     if task.agent:
         cmd.extend(["--agent", task.agent])
     cmd.extend([_CLAUDE_PROMPT_FLAG, task.prompt])
@@ -1266,7 +1317,7 @@ def _execute_task(
             if os.environ.get("PO_KEEP_WORKTREE") != "1":
                 _worktree_cleanup(git_root, worktree_path)
             else:
-                print(f"[DEBUG] worktree kept at: {worktree_path}", file=sys.stderr)
+                logger.info("PO_KEEP_WORKTREE=1: worktree kept at: %s", worktree_path)
 
     duration_sec = time.perf_counter() - start
     if dashboard is not None and dashboard.enabled:
@@ -1380,12 +1431,33 @@ class _DependencyScheduler:
         future_to_task: dict[Future[TaskResult], Task] = {}
         runner_error: RunnerError | None = None
 
-        for task in self._tasks:
-            if task.id in self._resumed_task_ids:
+        # Pre-loop: process resumed tasks in topological order so that
+        # multi-level resumed chains correctly propagate _indegree decrements.
+        #
+        # NOTE — test injection seam: this loop is kept separate from the main
+        # execution loop so that tests can monkeypatch ``_make_resumed`` to
+        # inject synthetic TaskResult objects without touching live execution.
+        #
+        # NOTE — indegree ownership: _indegree decrements performed here apply
+        # only to the downstream tasks of *resumed* tasks.  The main loop's
+        # ``_unlock_task`` handles decrements for tasks that actually execute.
+        # A downstream task whose indegree reaches 0 here will be skipped by
+        # the ``if task.id in results`` guard below and will therefore NOT be
+        # decremented a second time by ``_unlock_task``.
+        remaining = [t for t in self._tasks if t.id in self._resumed_task_ids]
+        max_iterations = len(remaining) + 1  # guard against unexpected cycles
+        iterations = 0
+        while remaining and iterations < max_iterations:
+            iterations += 1
+            still_pending = []
+            for task in remaining:
                 if all(dep in results for dep in task.depends_on):
                     results[task.id] = self._make_resumed(task)
                     for downstream_id in self._reverse_deps[task.id]:
                         self._indegree[downstream_id] -= 1
+                else:
+                    still_pending.append(task)
+            remaining = still_pending
 
         pending: set[Future[TaskResult]] = set()
         for task in self._tasks:
@@ -1587,11 +1659,9 @@ def run_manifest(
         loaded = load_run_state(manifest_path)
         if loaded is None:
             if not state_file_exists(manifest_path):
-                print(
-                    "Warning: --resume: no state file found"
-                    f" ({state_file_path(manifest_path)})."
-                    " Starting a normal run.",
-                    file=sys.stderr,
+                logger.warning(
+                    "--resume: no state file found (%s). Starting a normal run.",
+                    state_file_path(manifest_path),
                 )
             run_state = create_run_state(manifest_path)
             resumed_task_ids = frozenset()
@@ -1626,16 +1696,18 @@ def run_manifest(
                 stacklevel=2,
             )
 
-    claude_exe = claude_executable
-
     _tty = sys.stderr.isatty()
-    _dash_enabled = True if dashboard_enabled is None else dashboard_enabled
+    if dashboard_enabled is None:
+        _dash_enabled = _tty  # Default: enabled only when stderr is a TTY
+    else:
+        _dash_enabled = dashboard_enabled
     dashboard = _Dashboard(
         [t.id for t in tasks],
         enabled=_dash_enabled,
         live_renders=_tty,
     )
-    dashboard.start()
+    if _dash_enabled:
+        dashboard.start()
 
     def execute_fn(task: Task) -> TaskResult:
         sem: threading.Semaphore | None = (
@@ -1647,7 +1719,7 @@ def run_manifest(
             sem.acquire()
         try:
             result = _execute_with_retry(
-                task, claude_exe,
+                task, claude_executable,
                 git_root=git_root,
                 effective_cwd=manifest_cwd,
                 log_config=log_config,
@@ -1696,9 +1768,9 @@ def run_manifest(
                 started_at=_run_started_at,
                 finished_at=_run_finished_at,
             )
-        except Exception as exc:
-            if not isinstance(exc, RunnerError):
-                raise RunnerError(f"Report generation failed: {exc}") from exc
+        except RunnerError:
             raise
+        except Exception as exc:
+            raise RunnerError(f"Report generation failed: {exc}") from exc
 
     return run_result

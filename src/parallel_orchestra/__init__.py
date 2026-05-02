@@ -1,5 +1,7 @@
 """parallel-orchestra: Run Claude Code agents in parallel."""
 
+from importlib.metadata import PackageNotFoundError, version
+
 from ._exceptions import ParallelOrchestraError
 from .manifest import (
     SUPPORTED_PLAN_VERSIONS,
@@ -13,7 +15,10 @@ from .manifest import (
 from .report import generate_report
 from .runner import RunnerError, RunResult, TaskResult, run_manifest
 
-__version__ = "0.1.0"
+try:
+    __version__: str = version("parallel-orchestra")
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "unknown"
 
 __all__ = [
     "ParallelOrchestraError",

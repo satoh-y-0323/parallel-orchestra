@@ -30,6 +30,9 @@ MAX_CONCURRENCY_LIMIT: int = 256
 # Maximum allowed length for a webhook URL (characters).
 _WEBHOOK_URL_MAX_LENGTH: int = 2048
 
+# Default max_retries used when neither task nor defaults specify a value.
+_DEFAULT_TASK_MAX_RETRIES: int = 1
+
 # Known keys for the ``defaults:`` section.  Unrecognised keys are warned.
 _KNOWN_DEFAULTS_KEYS: frozenset[str] = frozenset({"max_retries"})
 
@@ -41,6 +44,19 @@ _TASK_ID_PATTERN: re.Pattern[str] = re.compile(r"^[A-Za-z0-9_-]+$")
 
 # Regular expression that defines the set of characters allowed in an agent name.
 _AGENT_PATTERN: re.Pattern[str] = re.compile(r"^[A-Za-z0-9_-]+$")
+
+# Well-known internal hostnames blocked in webhook URLs to mitigate SSRF.
+# IP-literal blocking is handled separately by _is_blocked_ip().
+_BLOCKED_HOSTNAMES: frozenset[str] = frozenset(
+    {
+        "localhost",
+        "localhost.localdomain",  # common alias on some Linux distributions
+        "localhost4",             # IPv4 localhost alias (e.g. RHEL/CentOS /etc/hosts)
+        "localhost6",             # IPv6 localhost alias (e.g. RHEL/CentOS /etc/hosts)
+        "ip6-localhost",
+        "ip6-loopback",
+    }
+)
 
 # Environment variable keys that are blocked for security reasons.
 # PO_WORKTREE_GUARD is also blocked to prevent user override of PO internals.
@@ -246,11 +262,12 @@ def _parse_webhook_config(raw: object, section_name: str) -> WebhookConfig:
         raise ManifestError(
             f"'{section_name}.webhook_url' must be a string, got {type(url)!r}."
         )
-    if not (url.startswith("http://") or url.startswith("https://")):
+    if not url.startswith("https://"):
         parsed_scheme = urlparse(url)
         raise ManifestError(
-            f"'{section_name}.webhook_url' scheme must be 'http' or 'https',"
-            f" got '{parsed_scheme.scheme or '(none)'}'"
+            f"'{section_name}.webhook_url' must use HTTPS"
+            f" (got scheme '{parsed_scheme.scheme or '(none)'}'). "
+            "Use 'https://' to protect webhook payloads in transit."
         )
 
     if len(url) > _WEBHOOK_URL_MAX_LENGTH:
@@ -265,6 +282,11 @@ def _parse_webhook_config(raw: object, section_name: str) -> WebhookConfig:
         raise ManifestError(
             f"'{section_name}.webhook_url' points to a blocked address"
             " (loopback, link-local, private, or unspecified)."
+        )
+    if host.lower() in _BLOCKED_HOSTNAMES:
+        raise ManifestError(
+            f"'{section_name}.webhook_url' points to a blocked hostname"
+            f" ({host!r})."
         )
 
     return WebhookConfig(webhook_url=url)
@@ -388,7 +410,7 @@ def _parse_task(
         else (
             defaults.max_retries
             if defaults is not None and defaults.max_retries is not None
-            else 1
+            else _DEFAULT_TASK_MAX_RETRIES
         )
     )
     max_retries: int = _parse_non_negative_int(
