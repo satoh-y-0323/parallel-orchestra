@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-03
+### Security
+- `read_only: true` tasks now receive `--read-only` instead of
+  `--dangerously-skip-permissions`, scoping agent permissions to the
+  declared intent.
+- Webhook URLs are restricted to HTTPS only; `http://` schemes are now
+  rejected at manifest parse time.
+- Expanded `_BLOCKED_HOSTNAMES` to cover `localhost.localdomain`,
+  `localhost4`, and `localhost6` (RHEL/CentOS `/etc/hosts` aliases) in
+  addition to the previously blocked `localhost` and IPv6 variants.
+- `ANTHROPIC_API_KEY` (and `ANTHROPIC_API_KEY_HELPER`) is now masked
+  with `[MASKED]` in per-task log files before writing to disk.
+- Per-task log directory is created with mode `0700`; log files are
+  restricted to mode `0600` after each write.
+- Unicode bidirectional-control and format characters (Unicode
+  categories `Cf`/`Cc`) are stripped from dashboard display strings to
+  prevent terminal UI spoofing.
+- Run-state files larger than 1 MiB are rejected and ignored to prevent
+  local memory exhaustion.
+
+### Fixed
+- `_copy_test_reports_from_worktree` removed; C3-specific report
+  copying logic no longer lives in the PO core. Worktree inspection on
+  failure is handled by `PO_KEEP_WORKTREE=1`.
+- Dashboard is no longer started by default when `stderr` is not a TTY
+  (e.g. CI environments); pass `--dashboard` to force-enable.
+- `__version__` is now resolved dynamically from the installed package
+  metadata (`importlib.metadata`) so it always matches `pyproject.toml`.
+- `run_state.py` warning messages are emitted via `logging` instead of
+  `print(file=sys.stderr)`, consistent with the project logging policy.
+- `_write_task_logs` chmod failures are now logged at `WARNING` level
+  instead of silently swallowed.
+- Resumed multi-level dependency chains (`--resume` with A→B→C where A
+  and B are already complete) now correctly propagate `_indegree`
+  decrements in topological order.
+
 ## [0.1.2] - 2026-05-01
 ### Fixed
 - Git subprocess invocations now explicitly use `encoding="utf-8"` with
