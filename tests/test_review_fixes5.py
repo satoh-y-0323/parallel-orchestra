@@ -42,7 +42,6 @@ import pytest
 
 from parallel_orchestra.runner import LogConfig, _write_task_logs
 
-
 # ---------------------------------------------------------------------------
 # OSError from chmod is logged at WARNING level
 # ---------------------------------------------------------------------------

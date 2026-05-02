@@ -50,7 +50,6 @@ import pytest
 
 from parallel_orchestra.runner import LogConfig, _write_task_logs
 
-
 # ---------------------------------------------------------------------------
 # Task 2 — OSError from chmod is logged at DEBUG level
 # ---------------------------------------------------------------------------

@@ -9,13 +9,12 @@ from __future__ import annotations
 import io
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
+import tomllib
 
 import parallel_orchestra
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -62,8 +61,8 @@ def test_version_matches_pyproject():
 
 def test_dashboard_disabled_when_not_tty(tmp_path, monkeypatch):
     """When stderr is not a TTY, dashboard_enabled=None must disable the dashboard."""
-    from parallel_orchestra import load_manifest, run_manifest
     import parallel_orchestra.runner as runner_module
+    from parallel_orchestra import load_manifest, run_manifest
 
     # Write a minimal manifest with one read-only task
     manifest_text = _manifest_with_tasks(
@@ -257,7 +256,7 @@ def test_state_file_size_limit(tmp_path):
     import hashlib
     import json as _json
 
-    from parallel_orchestra.run_state import state_file_path, load_run_state
+    from parallel_orchestra.run_state import load_run_state, state_file_path
 
     # Create a real manifest file so the state file name can be derived
     manifest_path = tmp_path / "manifest.md"
@@ -356,8 +355,8 @@ def test_write_task_gets_dangerously_skip_permissions(tmp_path, monkeypatch):
 
     Tests _execute_task directly to avoid git-worktree setup complexity.
     """
-    from parallel_orchestra.manifest import Task
     import parallel_orchestra.runner as runner_module
+    from parallel_orchestra.manifest import Task
 
     write_task = Task(
         id="write-task",

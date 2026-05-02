@@ -646,7 +646,9 @@ def _write_task_logs(
         # Same non-atomic window as above; accepted limitation.
         stderr_path.chmod(0o600)
     except OSError as exc:
-        logger.warning("_write_task_logs: failed to write logs for task %r: %s", task_id, exc)
+        logger.warning(
+            "_write_task_logs: failed to write logs for task %r: %s", task_id, exc
+        )
 
 
 def _execute_with_retry(
@@ -1308,7 +1310,7 @@ def _execute_task(
 
         # Auto-commit any uncommitted agent changes before worktree cleanup.
         # On success, the worktree branch is later merged into main.
-        # On failure / timeout, set PO_KEEP_WORKTREE=1 to retain the worktree for inspection.
+        # On failure / timeout, set PO_KEEP_WORKTREE=1 to retain the worktree.
         if worktree_path is not None and returncode == 0 and not timed_out:
             _auto_commit_worktree(worktree_path, task.id)
 
