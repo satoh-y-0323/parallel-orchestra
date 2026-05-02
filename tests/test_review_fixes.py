@@ -7,12 +7,12 @@ after the planned fixes are applied.
 from __future__ import annotations
 
 import io
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
-import tomllib
 
 import parallel_orchestra
 
@@ -45,9 +45,10 @@ def _manifest_with_tasks(tasks_yaml: str, name: str = "test-plan") -> str:
 
 def test_version_matches_pyproject():
     """__version__ must equal the version declared in pyproject.toml."""
-    with _PYPROJECT.open("rb") as fp:
-        pyproject_data = tomllib.load(fp)
-    expected = pyproject_data["project"]["version"]
+    content = _PYPROJECT.read_text(encoding="utf-8")
+    match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
+    assert match, "Could not find version in pyproject.toml"
+    expected = match.group(1)
     assert parallel_orchestra.__version__ == expected, (
         f"parallel_orchestra.__version__ is {parallel_orchestra.__version__!r} "
         f"but pyproject.toml declares {expected!r}"
