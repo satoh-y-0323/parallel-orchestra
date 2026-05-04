@@ -1019,6 +1019,19 @@ def _auto_commit_worktree(worktree_path: Path, task_id: str) -> None:
             timeout=_GIT_COMMAND_TIMEOUT_SEC,
             check=False,
         )
+        # Restore the empty CLAUDE.md that PO wrote to suppress agent startup
+        # protocols, so it is not committed and does not overwrite the original
+        # in the main branch after merge.
+        subprocess.run(
+            ["git", "restore", ".claude/CLAUDE.md"],
+            cwd=str(worktree_path),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=_GIT_COMMAND_TIMEOUT_SEC,
+            check=False,
+        )
         subprocess.run(
             ["git", "add", "-A"],
             cwd=str(worktree_path),
